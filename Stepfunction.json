@@ -1,0 +1,54 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Glue StartJobRun",
+  "States": {
+    "Glue StartJobRun": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "airlines-script",
+        "Arguments": {
+          "--file_name.$": "States.Format('{}/{}',$.detail.bucket.name,$.detail.object.key)"
+        }
+      },
+      "Next": "Choice",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.TaskFailed"
+          ],
+          "Next": "SNS Notification Failure"
+        }
+      ]
+    },
+    "Choice": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.JobRunState",
+          "StringMatches": "SUCCEEDED",
+          "Next": "SNS Notification Success"
+        }
+      ],
+      "Default": "SNS Notification Failure"
+    },
+    "SNS Notification Success": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "Message.$": "$",
+        "TopicArn": "arn:aws:sns:ap-south-1:058264222641:airlines-ingestion-status"
+      },
+      "End": true
+    },
+    "SNS Notification Failure": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "Message.$": "$",
+        "TopicArn": "arn:aws:sns:ap-south-1:058264222641:airlines-ingestion-status"
+      },
+      "End": true
+    }
+  }
+}
