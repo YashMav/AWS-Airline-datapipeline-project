@@ -1,0 +1,12 @@
+version: 0.2
+phases:
+  pre_build:
+    commands:
+      - echo "Starting build process........"
+  build:
+    commands:
+      - echo "Copying glue script to s3 location....."
+      - aws s3 cp --recursive ./scripts s3://aws-glue-assets-058264222641-ap-south-1/scripts/
+  post_build:
+    commands:
+      - echo "Build process completed...."
